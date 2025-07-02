@@ -24,7 +24,7 @@ func main() {
 	sem := make(chan bool, numCozinheiros)
 
 	// Canal concluido para rastrear a conclusão de goroutines
-	concluido := make(chan struct{}, numPedidos) // Canal para sinalizar conclusão de cada goroutine
+	// concluido := make(chan struct{}, numPedidos) // Canal para sinalizar conclusão de cada goroutine
 
 	fmt.Println("Iniciando a cozinha (usando canal bufferizado como semáforo)...")
 	startTime := time.Now()
@@ -41,22 +41,16 @@ func main() {
 
 		pedido := i // Captura a variável do loop para a goroutine
 		go func(cozinheiroID int, p int) {
-			// Sinaliza a conclusão da goroutine no canal "concluido"
-			defer func() { concluido <- struct{}{} }()
-
-			// Libera o "permit" de volta para o semáforo.
-			// Isso recebe um valor do canal 'sem', liberando um "slot"
-			// para que outra goroutine possa adquirir um permit.
-			defer func() { <-sem }() // Note o uso de uma função anônima para garantir que o defer seja executado corretamente
-
 			doThing(cozinheiroID, p) // Executa o trabalho de cozinhar
+			// concluido <- struct{}{}  // Sinaliza a conclusão da goroutine
+			<-sem // Libera o "permit" de volta para o semáforo
 		}(i%numCozinheiros, pedido) // Atribui um "ID de cozinheiro" para fins de impressão
 	}
 
 	go func() {
 		// Espera até que todas as goroutines sinalizem conclusão no canal "concluido"
 		for i := 0; i < numPedidos; i++ {
-			<-concluido
+			// <-concluido
 		}
 	}()
 	completedOrders := 0
