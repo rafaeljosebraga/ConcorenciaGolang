@@ -18,36 +18,24 @@ func doThing(id int, pedido int) {
 }
 
 func main() {
-	sem := make(chan struct{}, numCozinheiros) // struct{} é usado para economizar memória, pois não precisamos de um valor real, apenas do sinal
-	pedidosProntos := make(chan int, numPedidos)
-	concluido := make(chan struct{}, numPedidos) // Canal para sinalizar conclusão de cada goroutine
+	sem := make(chan bool, numCozinheiros)
+	completion := make(chan bool, numPedidos)
 	fmt.Println("Iniciando a cozinha (usando canal bufferizado como semáforo)...")
 	startTime := time.Now()
-
 	for i := 0; i < numPedidos; i++ {
-		sem <- struct{}{}
-		pedido := i // Captura a variável do loop para a goroutine
+		sem <- bool(true) // Envia um valor para o canal semáforo, bloqueando se o canal estiver cheio
+		pedido := i       // Captura a variável do loop para a goroutine
 		go func(cozinheiroID int, p int) {
-			defer func() { concluido <- struct{}{} }()
-			defer func() { <-sem }() // Note o uso de uma função anônima para garantir que o defer seja executado corretamente
-
 			doThing(cozinheiroID, p) // Executa o trabalho de cozinhar
-			pedidosProntos <- p      // Envia o pedido concluído para o canal de prontos
+			<-sem                    // Libera o "permit" de volta para o semáforo
+			completion <- true       // Sinaliza que a goroutine terminou
 		}(i%numCozinheiros, pedido) // Atribui um "ID de cozinheiro" para fins de impressão
 	}
-	go func() {
-		for i := 0; i < numPedidos; i++ {
-			<-concluido
-		}
-		close(pedidosProntos) // Fecha o canal de pedidos prontos
-	}()
-	fmt.Println("\n--- Pedidos Prontos ---")
-	completedOrders := 0
-	for pedido := range pedidosProntos {
-		fmt.Printf("Pedido %d pronto!\n", pedido)
-		completedOrders++
+	// Aguarda todas as goroutines sinalizarem conclusão
+	for i := 0; i < numPedidos; i++ {
+		<-completion
 	}
 	elapsedTime := time.Since(startTime)
-	fmt.Printf("\nTempo total: %s para %d pedidos.\n", elapsedTime, completedOrders)
+	fmt.Printf("\nTempo total: %s para %d pedidos.\n", elapsedTime, numPedidos)
 	fmt.Printf("Com %d cozinheiros (limite de concorrência usando canal bufferizado).\n", numCozinheiros)
 }
