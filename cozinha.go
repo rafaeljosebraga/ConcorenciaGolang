@@ -19,6 +19,7 @@ func doThing(id int, pedido int) {
 
 func main() {
 	sem := make(chan bool, numCozinheiros)
+	completion := make(chan bool, numPedidos)
 	fmt.Println("Iniciando a cozinha (usando canal bufferizado como semáforo)...")
 	startTime := time.Now()
 	for i := 0; i < numPedidos; i++ {
@@ -27,11 +28,12 @@ func main() {
 		go func(cozinheiroID int, p int) {
 			doThing(cozinheiroID, p) // Executa o trabalho de cozinhar
 			<-sem                    // Libera o "permit" de volta para o semáforo
+			completion <- true       // Sinaliza que a goroutine terminou
 		}(i%numCozinheiros, pedido) // Atribui um "ID de cozinheiro" para fins de impressão
 	}
-	// Wait for all goroutines to finish by draining the sem channel
-	for i := 0; i < numCozinheiros; i++ {
-		sem <- true
+	// Aguarda todas as goroutines sinalizarem conclusão
+	for i := 0; i < numPedidos; i++ {
+		<-completion
 	}
 	elapsedTime := time.Since(startTime)
 	fmt.Printf("\nTempo total: %s para %d pedidos.\n", elapsedTime, numPedidos)
