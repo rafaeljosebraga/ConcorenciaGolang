@@ -29,6 +29,10 @@ func main() {
 			<-sem                    // Libera o "permit" de volta para o semáforo
 		}(i%numCozinheiros, pedido) // Atribui um "ID de cozinheiro" para fins de impressão
 	}
+	// Wait for all goroutines to finish by draining the sem channel
+	for i := 0; i < numCozinheiros; i++ {
+		sem <- true
+	}
 	elapsedTime := time.Since(startTime)
 	fmt.Printf("\nTempo total: %s para %d pedidos.\n", elapsedTime, numPedidos)
 	fmt.Printf("Com %d cozinheiros (limite de concorrência usando canal bufferizado).\n", numCozinheiros)
