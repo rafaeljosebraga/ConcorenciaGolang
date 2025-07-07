@@ -64,4 +64,5 @@ func main() {
 			fmt.Printf("Pedido %d não processado.\n", i)
 		}
 	}
+	fmt.Println("Caso não houve nenhuma mensagem adicional de pedido não processado, então não há irregularidades")
 }
