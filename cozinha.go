@@ -20,7 +20,7 @@ func doThing(id int, pedido int, completion chan bool) {
 	mu.Lock()
 	pedidos = append(pedidos, pedido)                       // Simula o processamento do pedido
 	time.Sleep(time.Duration(rand.Float64()) * time.Second) // Simula o tempo de trabalho
-	pedidos = pedidos[1:]                                   // Remove o pedido da lista após o processamento
+	// pedidos = pedidos[1:]                                   // Remove o pedido da lista após o processamento
 	mu.Unlock()
 	fmt.Printf("Cozinheiro %d terminou pedido %d\n", id, pedido)
 	completion <- true // Sinaliza que o pedido foi processado
@@ -52,16 +52,16 @@ func main() {
 	fmt.Printf("Com %d cozinheiros (limite de concorrência usando canal bufferizado).\n", numCozinheiros)
 
 	// Teste importante (todos os pedidos foram processados?)
-	// for i := 0; i < numPedidos; i++ {
-	// 	j := 0
-	// 	for ; j < len(pedidos); j++ {
-	// 		if pedidos[j] == i {
-	// 			break // Verifica se o pedido foi processado
-	// 			// Verifica se todos os pedidos foram processados
-	// 		}
-	// 	}
-	// 	if pedidos[j] != i {
-	// 		fmt.Printf("Pedido %d não processado.\n", i)
-	// 	}
-	// }
+	for i := 0; i < numPedidos; i++ {
+		j := 0
+		for ; j < len(pedidos); j++ {
+			if pedidos[j] == i {
+				break // Verifica se o pedido foi processado
+				// Verifica se todos os pedidos foram processados
+			}
+		}
+		if pedidos[j] != i {
+			fmt.Printf("Pedido %d não processado.\n", i)
+		}
+	}
 }
